@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import ForeignKey, String, Enum, Text
+from sqlalchemy import ForeignKey, String, Enum, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 db = SQLAlchemy()
@@ -20,39 +20,6 @@ class Follower(db.Model):
             "user_from_id": self.user_from_id,
             "user_to_id": self.user_to_id,
         }
-
-
-class User(db.Model):
-    __tablename__ = "user"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False)
-    firstname: Mapped[str] = mapped_column(String(50))
-    lastname: Mapped[str] = mapped_column(String(50))
-    email: Mapped[str] = mapped_column(
-        String(120), unique=True, nullable=False)
-
-    posts: Mapped[list["Post"]] = relationship(back_populates="user")
-    comments: Mapped[list["Comment"]] = relationship(back_populates="author")
-    followers: Mapped[list["Follower"]] = relationship(
-        foreign_keys=[Follower.user_to_id], backref="followed"
-    )
-    following: Mapped[list["Follower"]] = relationship(
-        foreign_keys=[Follower.user_from_id], backref="follower"
-    )
-
-    def __str__(self):
-        return self.username
-
-    def serialize(self):
-        return {
-            "id": self.id,
-            "username": self.username,
-            "firstname": self.firstname,
-            "lastname": self.lastname,
-            "email": self.email,
-        }
-
 
 class Post(db.Model):
     __tablename__ = "post"
@@ -117,4 +84,121 @@ class Media(db.Model):
             "type": self.type,
             "url": self.url,
             "post_id": self.post_id,
+        }
+    
+class User(db.Model):
+    __tablename__ = "user"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    username: Mapped[str] = mapped_column(
+        String(50), unique=True, nullable=False)
+    firstname: Mapped[str] = mapped_column(String(50))
+    lastname: Mapped[str] = mapped_column(String(50))
+    email: Mapped[str] = mapped_column(
+        String(120), unique=True, nullable=False)
+
+    posts: Mapped[list["Post"]] = relationship(back_populates="user")
+    comments: Mapped[list["Comment"]] = relationship(back_populates="author")
+    followers: Mapped[list["Follower"]] = relationship(
+        foreign_keys=[Follower.user_to_id], backref="followed"
+    )
+    following: Mapped[list["Follower"]] = relationship(
+        foreign_keys=[Follower.user_from_id], backref="follower"
+    )
+
+    character_favorites: Mapped[list["UserCharacterFavorite"]] = relationship(back_populates="user")
+    planet_favorites: Mapped[list["UserPlanetFavorite"]] = relationship(back_populates="user")
+
+    def __str__(self):
+        return self.username
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "username": self.username,
+            "firstname": self.firstname,
+            "lastname": self.lastname,
+            "email": self.email,
+        }
+
+
+class Planet(db.Model):
+    __tablename__ = "planet"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(
+        String(120), unique=True, nullable=False)
+    climate: Mapped[str] = mapped_column(String(20), nullable=False)
+    population: Mapped[str] = mapped_column(String(20), nullable=False)
+    orbital_period: Mapped[str] = mapped_column(String(20), nullable=False)
+    rotation_period: Mapped[str] = mapped_column(String(20), nullable=False)
+    diameter: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    favorites: Mapped[list["UserPlanetFavorite"]] = relationship(back_populates="planet")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "climate": self.climate,
+            "population": self.population,
+            "orbital_period": self.orbital_period,
+            "rotation_period": self.rotation_period,
+            "diameter": self.diameter
+        }
+    
+class Character(db.Model):
+    __tablename__ = "character"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(
+        String(120), unique=True, nullable=False)
+    birth_year: Mapped[str] = mapped_column(String(20), nullable=False)
+    gender: Mapped[str] = mapped_column(String(20), nullable=False)
+    height: Mapped[str] = mapped_column(String(20), nullable=False)
+    skin_color: Mapped[str] = mapped_column(String(20), nullable=False)
+    eye_color: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    favorites: Mapped[list["UserCharacterFavorite"]] = relationship(back_populates="character")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "birth_year": self.birth_year,
+            "gender": self.gender,
+            "height": self.height,
+            "skin_color": self.skin_color,
+            "eye_color": self.eye_color
+        }
+    
+class UserCharacterFavorite(db.Model):
+    __tablename__ = "userCharacterFavorite"
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    character_id: Mapped[int] = mapped_column(ForeignKey("character.id"))
+
+    user: Mapped["User"] = relationship(back_populates="character_favorites")
+    character: Mapped["Character"] = relationship(back_populates="favorites")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "character_id": self.character_id
+        }
+
+class UserPlanetFavorite(db.Model):
+    __tablename__ = "userPlanetFavorite"
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
+    planet_id: Mapped[int] = mapped_column(ForeignKey("planet.id"))
+
+    user: Mapped["User"] = relationship(back_populates="planet_favorites")
+    planet: Mapped["Planet"] = relationship(back_populates="favorites")
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "user_id": self.user_id,
+            "planet_id": self.planet_id
         }

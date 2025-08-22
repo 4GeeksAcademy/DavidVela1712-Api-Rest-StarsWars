@@ -11,6 +11,8 @@ from admin.setup_admin import setup_admin
 from models import db
 from routes.users import register_user_routes
 from routes.posts import register_post_routes
+from routes.characters import register_characters_routes
+from routes.planets import register_planets_routes
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -44,6 +46,8 @@ def sitemap():
 
 register_user_routes(app)
 register_post_routes(app)
+register_characters_routes(app)
+register_planets_routes(app)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 3000))
